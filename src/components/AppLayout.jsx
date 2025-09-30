@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../app/slices/authSlice';
+import { useTheme } from '../contexts/ThemeContext';
+import GlobalSearch from './GlobalSearch';
 import {
   Box,
   Drawer,
@@ -18,6 +20,7 @@ import {
   Menu,
   MenuItem,
   Divider,
+  Tooltip,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
@@ -25,7 +28,10 @@ import {
   AutoAwesome as GenerateIcon,
   Storage as DataIcon,
   Menu as MenuIcon,
-  AccountCircle,
+  Search as SearchIcon,
+  LightMode as LightIcon,
+  DarkMode as DarkIcon,
+  Settings as SettingsIcon,
 } from '@mui/icons-material';
 
 const drawerWidth = 260;
@@ -42,8 +48,10 @@ const AppLayout = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const user = useSelector((state) => state.auth.user);
+  const { isDarkMode, toggleTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -118,7 +126,20 @@ const AppLayout = () => {
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
             {menuItems.find((item) => location.pathname.startsWith(item.path))?.text || 'Dashboard'}
           </Typography>
-          <IconButton onClick={handleMenuClick} sx={{ ml: 2 }}>
+          
+          <Tooltip title="Search">
+            <IconButton onClick={() => setSearchOpen(true)} sx={{ mr: 1 }}>
+              <SearchIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title={isDarkMode ? 'Light Mode' : 'Dark Mode'}>
+            <IconButton onClick={toggleTheme} sx={{ mr: 1 }}>
+              {isDarkMode ? <LightIcon /> : <DarkIcon />}
+            </IconButton>
+          </Tooltip>
+
+          <IconButton onClick={handleMenuClick} sx={{ ml: 1 }}>
             <Avatar sx={{ bgcolor: 'hsl(220 70% 50%)', width: 36, height: 36 }}>
               {user?.name?.charAt(0) || 'A'}
             </Avatar>
@@ -130,8 +151,16 @@ const AppLayout = () => {
               </Typography>
             </MenuItem>
             <Divider />
+            <MenuItem onClick={() => { navigate('/preferences'); handleMenuClose(); }}>
+              <ListItemIcon>
+                <SettingsIcon fontSize="small" />
+              </ListItemIcon>
+              Preferences
+            </MenuItem>
             <MenuItem onClick={handleLogout}>Logout</MenuItem>
           </Menu>
+          
+          <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
         </Toolbar>
       </AppBar>
       <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}>

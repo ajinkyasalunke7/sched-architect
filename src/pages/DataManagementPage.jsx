@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { Box, Button, Tabs, Tab, IconButton } from '@mui/material';
-import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Box, Button, Tabs, Tab, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Add as AddIcon, Edit as EditIcon, Delete as DeleteIcon, Download as DownloadIcon, Upload as UploadIcon, MoreVert as MoreIcon } from '@mui/icons-material';
 import DataTable from '../components/DataTable';
 import FormModal from '../components/FormModal';
+import ExportMenu from '../components/ExportMenu';
+import ImportDialog from '../components/ImportDialog';
 import { toast } from 'react-toastify';
+import { logActivity } from '../components/ActivityFeed';
 import {
   fetchCoursesAsync,
   createCourseAsync,
@@ -129,6 +132,8 @@ const DataManagementPage = () => {
   const dispatch = useDispatch();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [exportAnchor, setExportAnchor] = useState(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const coursesData = useSelector((state) => state.courses);
   const facultyData = useSelector((state) => state.faculty);
@@ -171,11 +176,20 @@ const DataManagementPage = () => {
     if (window.confirm('Are you sure you want to delete this item?')) {
       try {
         await dispatch(currentActions.delete(id)).unwrap();
+        logActivity('delete', `Deleted ${config.label.slice(0, -1).toLowerCase()}`, dataType);
         toast.success('Deleted successfully!');
       } catch (error) {
         toast.error('Failed to delete');
       }
     }
+  };
+
+  const handleImport = async (data) => {
+    for (const item of data) {
+      await dispatch(currentActions.create(item)).unwrap();
+    }
+    logActivity('create', `Imported ${data.length} ${config.label.toLowerCase()}`, dataType);
+    dispatch(currentActions.fetch());
   };
 
   const handleSubmit = async (data) => {
@@ -200,9 +214,11 @@ const DataManagementPage = () => {
 
       if (editingItem) {
         await dispatch(currentActions.update({ id: editingItem.id, data })).unwrap();
+        logActivity('update', `Updated ${config.label.slice(0, -1).toLowerCase()}`, dataType);
         toast.success('Updated successfully!');
       } else {
         await dispatch(currentActions.create(data)).unwrap();
+        logActivity('create', `Created new ${config.label.slice(0, -1).toLowerCase()}`, dataType);
         toast.success('Created successfully!');
       }
     } catch (error) {
@@ -241,20 +257,38 @@ const DataManagementPage = () => {
             <Tab key={key} label={label} value={key} onClick={() => window.location.href = `/manage/${key}`} sx={{ textTransform: 'none', fontWeight: 600 }} />
           ))}
         </Tabs>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
-          sx={{
-            textTransform: 'none',
-            background: 'linear-gradient(135deg, hsl(220 70% 50%), hsl(265 60% 55%))',
-            '&:hover': {
-              background: 'linear-gradient(135deg, hsl(220 70% 45%), hsl(265 60% 50%))',
-            },
-          }}
-        >
-          Add New
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button
+            variant="outlined"
+            startIcon={<UploadIcon />}
+            onClick={() => setImportOpen(true)}
+            sx={{ textTransform: 'none' }}
+          >
+            Import CSV
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<DownloadIcon />}
+            onClick={(e) => setExportAnchor(e.currentTarget)}
+            sx={{ textTransform: 'none' }}
+          >
+            Export
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+            sx={{
+              textTransform: 'none',
+              background: 'linear-gradient(135deg, hsl(220 70% 50%), hsl(265 60% 55%))',
+              '&:hover': {
+                background: 'linear-gradient(135deg, hsl(220 70% 45%), hsl(265 60% 50%))',
+              },
+            }}
+          >
+            Add New
+          </Button>
+        </Box>
       </Box>
 
       <DataTable columns={config.columns} rows={rows} loading={currentState.status === 'loading'} />
@@ -266,6 +300,21 @@ const DataManagementPage = () => {
         title={`${editingItem ? 'Edit' : 'Add'} ${config.label.slice(0, -1)}`}
         fields={config.fields}
         defaultValues={defaultValues}
+      />
+
+      <ExportMenu
+        anchorEl={exportAnchor}
+        open={Boolean(exportAnchor)}
+        onClose={() => setExportAnchor(null)}
+        data={currentState.data}
+        type={config.label}
+      />
+
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={handleImport}
+        dataType={config.label}
       />
     </Box>
   );

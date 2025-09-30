@@ -33,11 +33,20 @@ const ScheduleBlock = ({ id, course, faculty, room, isConflict }) => {
         color: 'white',
         cursor: 'grab',
         border: isConflict ? '3px solid hsl(0 72% 55%)' : 'none',
-        boxShadow: isConflict ? '0 0 0 4px hsl(0 72% 55% / 0.2)' : '0 2px 8px rgba(0,0,0,0.1)',
+        boxShadow: isConflict 
+          ? '0 0 0 4px hsl(0 72% 55% / 0.2), 0 4px 20px rgba(255, 0, 0, 0.4)' 
+          : '0 2px 8px rgba(0,0,0,0.1)',
         position: 'relative',
         transition: 'all 0.3s',
+        animation: isConflict ? 'pulse 2s ease-in-out infinite' : 'none',
+        '@keyframes pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 4px hsl(0 72% 55% / 0.2), 0 4px 20px rgba(255, 0, 0, 0.4)' },
+          '50%': { boxShadow: '0 0 0 8px hsl(0 72% 55% / 0.3), 0 4px 30px rgba(255, 0, 0, 0.6)' },
+        },
         '&:hover': {
-          boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+          boxShadow: isConflict 
+            ? '0 0 0 4px hsl(0 72% 55% / 0.3), 0 8px 30px rgba(255, 0, 0, 0.5)'
+            : '0 4px 16px rgba(0,0,0,0.2)',
           transform: 'translateY(-2px)',
         },
         '&:active': {

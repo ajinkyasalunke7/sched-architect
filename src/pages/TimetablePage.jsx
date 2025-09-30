@@ -1,14 +1,71 @@
+import { useState } from 'react';
 import { Box, Typography, Button, Alert } from '@mui/material';
 import { Download as DownloadIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import TimetableGrid from '../features/timetable/TimetableGrid';
-import { useSelector } from 'react-redux';
+import TimetableViewSwitcher from '../components/TimetableViewSwitcher';
+import ExportMenu from '../components/ExportMenu';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchTimetableAsync } from '../app/slices/timetableSlice';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const TimetablePage = () => {
+  const dispatch = useDispatch();
   const generationStatus = useSelector((state) => state.timetable.generationStatus);
+  const timetableData = useSelector((state) => state.timetable.data);
+  const courses = useSelector((state) => state.courses.data);
+  const faculty = useSelector((state) => state.faculty.data);
+  const rooms = useSelector((state) => state.rooms.data);
+  
+  const [view, setView] = useState('weekly');
+  const [exportAnchor, setExportAnchor] = useState(null);
 
-  const handleExport = () => {
-    // Mock export functionality
-    alert('Export feature coming soon!');
+  const handleRefresh = () => {
+    dispatch(fetchTimetableAsync());
+  };
+
+  const handleExportClick = (event) => {
+    setExportAnchor(event.currentTarget);
+  };
+
+  const handleExportToPDF = () => {
+    const doc = new jsPDF('l', 'mm', 'a4');
+    
+    doc.setFontSize(18);
+    doc.text('Academic Timetable', 14, 20);
+    doc.setFontSize(11);
+    doc.text(`Generated on ${new Date().toLocaleDateString()}`, 14, 28);
+
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+    const timeSlots = ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
+
+    const tableData = timeSlots.map(time => {
+      const row = [time];
+      days.forEach(day => {
+        const slot = timetableData[day]?.[time];
+        if (slot) {
+          const course = courses.find(c => c.id === slot.courseId);
+          const fac = faculty.find(f => f.id === slot.facultyId);
+          const room = rooms.find(r => r.id === slot.roomId);
+          row.push(`${course?.code || ''}\n${fac?.name?.split(' ').slice(-1)[0] || ''}\n${room?.name || ''}`);
+        } else {
+          row.push('-');
+        }
+      });
+      return row;
+    });
+
+    doc.autoTable({
+      head: [['Time', ...days]],
+      body: tableData,
+      startY: 35,
+      theme: 'grid',
+      headStyles: { fillColor: [30, 64, 175] },
+      styles: { fontSize: 8 },
+    });
+
+    doc.save(`timetable-${Date.now()}.pdf`);
+    setExportAnchor(null);
   };
 
   return (
@@ -22,10 +79,12 @@ const TimetablePage = () => {
             Drag and drop classes to rearrange the schedule
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          <TimetableViewSwitcher view={view} onChange={setView} />
           <Button
             variant="outlined"
             startIcon={<RefreshIcon />}
+            onClick={handleRefresh}
             sx={{ textTransform: 'none' }}
           >
             Refresh
@@ -33,7 +92,7 @@ const TimetablePage = () => {
           <Button
             variant="contained"
             startIcon={<DownloadIcon />}
-            onClick={handleExport}
+            onClick={handleExportClick}
             sx={{
               textTransform: 'none',
               background: 'linear-gradient(135deg, hsl(220 70% 50%), hsl(265 60% 55%))',
@@ -46,6 +105,14 @@ const TimetablePage = () => {
           </Button>
         </Box>
       </Box>
+
+      <ExportMenu
+        anchorEl={exportAnchor}
+        open={Boolean(exportAnchor)}
+        onClose={() => setExportAnchor(null)}
+        data={[]}
+        type="Timetable"
+      />
 
       {generationStatus === 'completed' && (
         <Alert severity="success" sx={{ mb: 3 }}>
@@ -70,7 +137,7 @@ const TimetablePage = () => {
         </Box>
       </Box>
 
-      <TimetableGrid />
+      <TimetableGrid view={view} />
     </Box>
   );
 };

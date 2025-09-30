@@ -14,6 +14,8 @@ import {
   Storage as ManageIcon,
   Groups as StudentsIcon,
 } from '@mui/icons-material';
+import DashboardCharts from '../components/DashboardCharts';
+import ActivityFeed from '../components/ActivityFeed';
 
 const StatCard = ({ title, value, icon, color }) => (
   <Card
@@ -175,7 +177,7 @@ const DashboardPage = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: 'white' }}>
+          <Paper elevation={0} sx={{ p: 3, borderRadius: 3, bgcolor: 'hsl(var(--card))' }}>
             <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
               Timetable Status
             </Typography>
@@ -197,6 +199,14 @@ const DashboardPage = () => {
           </Paper>
         </Grid>
       </Grid>
+
+      <Box sx={{ mt: 4 }}>
+        <DashboardCharts />
+      </Box>
+
+      <Box sx={{ mt: 4 }}>
+        <ActivityFeed />
+      </Box>
     </Box>
   );
 };

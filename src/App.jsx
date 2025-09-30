@@ -6,6 +6,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import store from './app/store';
+import { ThemeProvider as CustomThemeProvider } from './contexts/ThemeContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/AppLayout';
 import LoginPage from './pages/LoginPage';
@@ -13,6 +14,7 @@ import DashboardPage from './pages/DashboardPage';
 import DataManagementPage from './pages/DataManagementPage';
 import GeneratePage from './pages/GeneratePage';
 import TimetablePage from './pages/TimetablePage';
+import PreferencesPage from './pages/PreferencesPage';
 import NotFound from './pages/NotFound';
 
 const theme = createTheme({
@@ -31,30 +33,33 @@ const theme = createTheme({
 
 const App = () => (
   <Provider store={store}>
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route
-            path="/*"
-            element={
-              <ProtectedRoute>
-                <AppLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="dashboard" element={<DashboardPage />} />
-            <Route path="timetable" element={<TimetablePage />} />
-            <Route path="generate" element={<GeneratePage />} />
-            <Route path="manage/:dataType" element={<DataManagementPage />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-      <ToastContainer position="top-right" autoClose={3000} />
-    </ThemeProvider>
+    <CustomThemeProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="dashboard" element={<DashboardPage />} />
+              <Route path="timetable" element={<TimetablePage />} />
+              <Route path="generate" element={<GeneratePage />} />
+              <Route path="manage/:dataType" element={<DataManagementPage />} />
+              <Route path="preferences" element={<PreferencesPage />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        <ToastContainer position="top-right" autoClose={3000} />
+      </ThemeProvider>
+    </CustomThemeProvider>
   </Provider>
 );
 
